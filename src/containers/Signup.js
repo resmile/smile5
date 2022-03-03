@@ -202,9 +202,9 @@ export default function Signup() {
           'custom:bizLicName' : uploadedFileName,
           'custom:bizLic' : uploadedFileUrl,
           'custom:groupName' : groupName,
-          'custom:groupNo' : groupNo,
+          //'custom:groupNo' : groupNo,
           'custom:stateName' : "미분류",
-          'custom:stateNo' : 0,
+          //'custom:stateNo' : 0,
           'custom:ceoName' : u.ceoName,
           'custom:ceoPhone' : u.ceoPhone,
           }
@@ -288,6 +288,7 @@ export default function Signup() {
   async function handleUploadFile(e) {
     const file = e.target.files[0];
     const fileName = file.name;
+
     await Storage.put(fileName, file).then(() => {
       setUploadedFileName(fileName);
       handleGetFile();
@@ -301,8 +302,8 @@ export default function Signup() {
   async function handleGetFile() {
     let fileKey= await Storage.list('')
     const signedUrl = await Storage.get(fileKey.key);
-    const preUrl = signedUrl.split('?')[0];
-    setUploadedFileUrl("https://smile210113-dev.s3.ap-northeast-2.amazonaws.com/public/"+uploadedFileName);    
+    //const preUrl = signedUrl.split('?')[0];
+    setUploadedFileUrl("https://smile195110-dev.s3.ap-northeast-2.amazonaws.com/public/"+uploadedFileName);    
   }
 
   async function handleDelFile(event) {

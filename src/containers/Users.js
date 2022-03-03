@@ -153,7 +153,7 @@ const Users = () => {
       <a
         target="_blank"
         rel="noopener noreferrer"
-        href={"https://smile210113-dev.s3.ap-northeast-2.amazonaws.com/public/" + props.value}
+        href={"https://smile195110-dev.s3.ap-northeast-2.amazonaws.com/public/" + props.value}
       >
         {props.value==null  || props.value==="" ? "":"Y" }
       </a>
@@ -292,10 +292,10 @@ const Users = () => {
     let path = '/listUsers';
     let myInit = { 
         queryStringParameters: {
-          "AttributesToGet": [],
-          "Filter": "",
+          "groupname": "admin",
+          //"Filter": "",
           "Limit": 10,
-          "UserPoolId": "ap-northeast-2_UzQp7Bmy0"
+          //"UserPoolId": "ap-northeast-2_Xc0NzEeIU"
         },
         headers: {
           'Content-Type' : 'application/json',
@@ -385,20 +385,7 @@ const Users = () => {
           className={`form-control`}
         />
     </Col>
-    <Col xs="auto">
-    {editedRows.length} 건 수정
-    </Col>
-   
-    <Col xs="auto">
-     
-    <Button
-          block
-          type="button"
-          onClick={onEditedRowsSave}
-        >
-          저장
-        </Button>
-    </Col>
+    
     <Col xs="auto">
      
     <Button
@@ -407,16 +394,6 @@ const Users = () => {
           onClick={onAddRow}
         >
           신규 등록
-        </Button>
-    </Col>
-    <Col xs="auto">
-     
-    <Button
-          block
-          type="button"
-          onClick={onAddRow}
-        >
-          삭제
         </Button>
     </Col>
   </Row>

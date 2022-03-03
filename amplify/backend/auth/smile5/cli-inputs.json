@@ -2,7 +2,7 @@
   "version": "1",
   "cognitoConfig": {
     "identityPoolName": "smile5_identitypool_674c2384",
-    "allowUnauthenticatedIdentities": false,
+    "allowUnauthenticatedIdentities": true,
     "resourceNameTruncated": "smile5152dc15f",
     "userPoolName": "smile5",
     "autoVerifiedAttributes": [
@@ -93,15 +93,13 @@
       }
     ],
     "permissions": [
-      "{\"policyName\":\"AddToGroupCognito\",\"trigger\":\"PostConfirmation\",\"effect\":\"Allow\",\"actions\":[\"cognito-idp:AdminAddUserToGroup\",\"cognito-idp:GetGroup\",\"cognito-idp:CreateGroup\"],\"resource\":{\"paramType\":\"!GetAtt\",\"keys\":[\"UserPool\",\"Arn\"]}}"
+      "{\n  \"policyName\": \"AddToGroupCognito\",\n  \"trigger\": \"PostConfirmation\",\n  \"effect\": \"Allow\",\n  \"actions\": [\n    \"cognito-idp:AdminAddUserToGroup\",\n    \"cognito-idp:GetGroup\",\n    \"cognito-idp:CreateGroup\"\n  ],\n  \"resource\": {\n    \"paramType\": \"!GetAtt\",\n    \"keys\": [\n      \"UserPool\",\n      \"Arn\"\n    ]\n  }\n}"
     ],
-    "authTriggerConnections": [
-      "{\"triggerType\":\"PostConfirmation\",\"lambdaFunctionName\":\"smile5PostConfirmation\"}",
-      "{\"triggerType\":\"PreSignUp\",\"lambdaFunctionName\":\"smile5PreSignup\"}"
-    ],
+    "authTriggerConnections": "[\n  {\n    \"triggerType\": \"PostConfirmation\",\n    \"lambdaFunctionName\": \"smile5PostConfirmation\"\n  },\n  {\n    \"triggerType\": \"PreSignUp\",\n    \"lambdaFunctionName\": \"smile5PreSignup\"\n  }\n]",
     "parentStack": {
       "Ref": "AWS::StackId"
     },
-    "authProviders": []
+    "authProviders": [],
+    "adminQueryGroup": "admin"
   }
 }

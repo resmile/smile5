@@ -16,14 +16,14 @@ Amplify.configure(config);
 /*
 Amplify.configure({
   Auth: {
-      identityPoolId: "ap-northeast-2:52525c8a-1b28-44fc-be77-978263de265c",
+      identityPoolId: "ap-northeast-2:0d29170a-e9a8-4586-ad6d-37a26b111cfd",
       region: 'ap-northeast-2', // REQUIRED - Amazon Cognito Region
-      userPoolId: 'ap-northeast-2_UzQp7Bmy0', //OPTIONAL - Amazon Cognito User Pool ID
-      userPoolWebClientId: '9pfdjpuh0t7vl447f6p80b0fr', //OPTIONAL - Amazon Cognito Web Client ID
+      userPoolId: 'ap-northeast-2_Xc0NzEeIU', //OPTIONAL - Amazon Cognito User Pool ID
+      userPoolWebClientId: '42smb1q8kp40q1rrivu8nd9j1t', //OPTIONAL - Amazon Cognito Web Client ID
   },
   Storage: {
       AWSS3: {
-          bucket: 'smile210113-dev', //REQUIRED -  Amazon S3 bucket name
+          bucket: 'smile195110-dev', //REQUIRED -  Amazon S3 bucket name
           region: 'ap-northeast-2', //OPTIONAL -  Amazon service region
       }
   }
