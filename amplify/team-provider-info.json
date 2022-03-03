@@ -1,0 +1,37 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-smile5-dev-195110-authRole",
+      "UnauthRoleArn": "arn:aws:iam::965619447539:role/amplify-smile5-dev-195110-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::965619447539:role/amplify-smile5-dev-195110-authRole",
+      "Region": "ap-northeast-2",
+      "DeploymentBucketName": "amplify-smile5-dev-195110-deployment",
+      "UnauthRoleName": "amplify-smile5-dev-195110-unauthRole",
+      "StackName": "amplify-smile5-dev-195110",
+      "StackId": "arn:aws:cloudformation:ap-northeast-2:965619447539:stack/amplify-smile5-dev-195110/d8d75d20-9adf-11ec-a1d9-027fd2658c2a",
+      "AmplifyAppId": "d3uzl7yhyjj9xf",
+      "AuthTriggerTemplateURL": "https://s3.amazonaws.com/amplify-smile5-dev-195110-deployment/amplify-cfn-templates/auth/auth-trigger-cloudformation-template.json"
+    },
+    "categories": {
+      "auth": {
+        "smile5": {},
+        "true": {}
+      },
+      "function": {
+        "smile5PostConfirmation": {
+          "GROUP": "",
+          "deploymentBucketName": "amplify-smile5-dev-195110-deployment",
+          "s3Key": "amplify-builds/smile5PostConfirmation-6f516665786c56467478-build.zip"
+        },
+        "smile5PreSignup": {
+          "deploymentBucketName": "amplify-smile5-dev-195110-deployment",
+          "s3Key": "amplify-builds/smile5PreSignup-674c67502f4365316543-build.zip"
+        },
+        "AdminQueries757c7ed0": {
+          "deploymentBucketName": "amplify-smile5-dev-195110-deployment",
+          "s3Key": "amplify-builds/AdminQueries757c7ed0-3876424c5962556e4747-build.zip"
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,4 @@
 .App {
-  text-align: center;
 }
 
 .App-logo {
@@ -36,3 +35,55 @@
     transform: rotate(360deg);
   }
 }
+
+
+@media all and (min-width: 480px) {
+  .Container {
+    padding: 60px 0;
+  }
+
+  .Container form {
+    margin: 0 auto;
+    max-width: 320px;
+  }
+
+  .Container h3 {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .Container div {
+    margin: 0 auto;
+    max-width: 320px;
+  }
+}
+
+
+hr {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.cell-wrap-text {
+  white-space: normal !important;
+}
+.ag-row .ag-cell {
+display: flex;
+justify-content: left; /* align horizontal */
+align-items: center;
+}
+
+.text-left {
+text-align: left;
+}
+
+.text-center {
+  text-align: center;
+}
+.text-right {
+text-align: right;
+}
+

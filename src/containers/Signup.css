@@ -1,0 +1,45 @@
+@media all and (min-width: 480px) {
+    .Signup {
+      padding: 60px 0;
+    }
+  
+    .Signup form {
+      margin: 0 auto;
+      max-width: 320px;
+    }
+
+    .Signup .lander {
+      text-align: center;
+      margin: 0 auto;
+      max-width: 320px;
+
+    }
+    
+    .Signup .lander h1 {
+      font-family: "Open Sans", sans-serif;
+      font-weight: 600;
+    }
+
+    .Signup h6 {
+      font-family: "Open Sans", sans-serif;
+      font-weight: 600;
+      margin-top : 2rem;
+
+    }
+    .Signup .text-muted {
+      white-space: pre-wrap;
+    }
+
+    .Signup h3 {
+      font-family: "Open Sans", sans-serif;
+      font-weight: 600;
+      text-align: center;
+    }
+  }
+
+  hr {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }

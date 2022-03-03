@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "smile5",
+    "serviceName": "AppSync",
+    "gqlSchemaPath": "/Users/resmile/project/smile5/amplify/backend/api/smile5/schema.graphql",
+    "defaultAuthType": {
+      "mode": "API_KEY",
+      "expirationTime": 365,
+      "apiKeyExpirationDate": "2023-03-03T11:14:04.250Z",
+      "keyDescription": "public"
+    }
+  }
+}

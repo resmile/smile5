@@ -1,0 +1,18 @@
+[
+  {
+    "groupName": "admin",
+    "precedence": 1
+  },
+  {
+    "groupName": "general",
+    "precedence": 2
+  },
+  {
+    "groupName": "buyer",
+    "precedence": 3
+  },
+  {
+    "groupName": "seller",
+    "precedence": 4
+  }
+]
