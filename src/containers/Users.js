@@ -292,7 +292,7 @@ const Users = () => {
     let path = '/listUsers';
     let myInit = { 
         queryStringParameters: {
-          "groupname": "admin",
+          //"groupname": "admin",
           //"Filter": "",
           "Limit": 10,
           //"UserPoolId": "ap-northeast-2_Xc0NzEeIU"
@@ -385,7 +385,10 @@ const Users = () => {
           className={`form-control`}
         />
     </Col>
-    
+    <Col xs="auto">
+    {editedRows.length} 건 수정
+    </Col>
+ 
     <Col xs="auto">
      
     <Button
@@ -396,6 +399,7 @@ const Users = () => {
           신규 등록
         </Button>
     </Col>
+
   </Row>
         <AgGridReact
             rowData={rowData}
@@ -425,3 +429,29 @@ const Users = () => {
 }
 
 export default Users;
+
+/*
+
+  
+    <Col xs="auto">
+     
+    <Button
+          block
+          type="button"
+          onClick={onEditedRowsSave}
+        >
+          저장
+        </Button>
+    </Col>
+
+    <Col xs="auto">
+     
+    <Button
+          block
+          type="button"
+          onClick={onAddRow}
+        >
+          삭제
+        </Button>
+    </Col>
+*/
