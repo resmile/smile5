@@ -32,9 +32,23 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      await Auth.signIn(fields.id, fields.pwd);
-      userHasAuthenticated(true);
-      history.push("/dashboard");
+      await Auth.signIn(fields.id, fields.pwd)
+      .then((d) => { 
+        //console.log(d);
+        userHasAuthenticated(true);
+        /*
+        const stateName=d.attributes['custom:stateName'];
+        console.log(stateName);
+        if(stateName=="미분류"){
+          history.push("/unapproved");
+        }else{
+          history.push("/dashboard");
+        }
+        */
+        history.push("/dashboard");
+
+      })
+      .catch(() => { console.log("login fail"); });
     } catch (e) {
       const msg=onError(e);      
       switch (msg) {

@@ -7,6 +7,7 @@ import Signup from "./containers/Signup";
 import ForgotPwd from "./containers/ForgotPwd";
 import Profile from "./containers/Profile";
 import DashBoard from "./containers/DashBoard";
+import Unapproved from "./containers/Unapproved";
 import Agreement from "./containers/Agreement";
 
 import Ords from './containers/Ords';
@@ -35,6 +36,7 @@ import AuthenticatedRoute from "./components/AuthenticatedRoute";
 import UnauthenticatedRoute from "./components/UnauthenticatedRoute";
 
 
+
 export default function Routes() {
   return (
     <Switch>
@@ -59,8 +61,9 @@ export default function Routes() {
 <AuthenticatedRoute exact path="/dashboard">
   <DashBoard />
 </AuthenticatedRoute>
-
-
+<AuthenticatedRoute exact path="/unapproved">
+  <Unapproved />
+</AuthenticatedRoute>
 <AuthenticatedRoute exact path='/ords'>
 <Ords />
 </AuthenticatedRoute>
