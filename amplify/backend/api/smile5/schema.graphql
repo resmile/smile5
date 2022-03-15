@@ -20,3 +20,76 @@ type Comment @model {
   post: Post @belongsTo
   content: String!
 }
+
+
+type Prod @model {
+  prodNo: ID!
+  prodName: String!
+  setId: String
+  setVol: Int
+  setName: String
+  cateNo: Int
+  cateName: String
+  isVat: String
+  isSale: String
+  warehNo: Int
+  warehName: String
+  suppNo: Int
+  suppName: String
+  currStock: Int
+  currPrice: Int
+  prevPrice: Int
+  stock : [Stock] @hasMany
+  purchas : [Purchas] @hasMany
+}
+
+type Stock @model {
+  id: ID!
+  typeName: String
+  stock: Int
+  prevStock: Int
+  afterStock: Int
+  memo: String
+  prod: Prod @belongsTo
+}
+
+type Purchas @model {
+  id: ID!
+  purchasePrice: Int
+  suppNo: Int
+  suppName: String
+  prod: Prod @belongsTo
+}
+
+type Groups @model {
+  id: ID!
+  name: String
+  type: String
+  cuss: [Cuss] @hasMany
+  groupMem: [GroupMem] @hasMany
+}
+
+type GroupMem @model {
+  id: ID!
+  name : String
+  groups: Groups @belongsTo
+}
+
+
+type Notis @model {
+  id: ID!
+  title: String
+  body: String
+  files: String
+  name: String
+  createBy: String
+  state: Int
+  stateName: String
+}
+
+type Cuss @model {
+  id: ID!
+  displayName: String
+  depositor : String
+}
+

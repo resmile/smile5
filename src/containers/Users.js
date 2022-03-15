@@ -1,152 +1,59 @@
-import Amplify, { Auth, API, graphqlOperation} from 'aws-amplify';
-import React, { useCallback, useState, useEffect, useRef, useMemo } from 'react';
+import React, { useCallback, useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Button from "react-bootstrap/Button";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import Popup from '../components/Popup';
+import toast, { Toaster } from 'react-hot-toast';
 
+import gqlsuspense from 'graphql-suspense'
+import { Auth, API, graphqlOperation } from 'aws-amplify'
+import { listGroups } from '../graphql/customQueries'
 
-import {AgGridColumn, AgGridReact} from 'ag-grid-react';
+import * as lib from "../lib/aggridFun";
+import {AgGridReact} from 'ag-grid-react';
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
-
-import { GridApi, ColumnApi } from 'ag-grid-community';
-//import { listPost2s } from './graphql/queries'
-import Spinner from "react-bootstrap/Spinner";
-import toast, { Toaster } from 'react-hot-toast';
+import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
+import 'ag-grid-autocomplete-editor/dist/main.css';
+import 'ag-grid-enterprise';
+import { createGroups, updateGroups, deleteGroups } from '../graphql/customMutations'
 
 Number.prototype.format = function(n, x) {
   var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
   return this.toFixed(Math.max(0, ~~n)).replace(new RegExp(re, 'g'), '$&,');
 };
 
-const Users = () => {
+function LoadTable() {
+  return (
+      <Suspense
+        fallback={<div className="Container"><span>데이터를 불러오는 중입니다. 잠시만 기다려 주세요.</span></div>}>
+           <h3>회원리스트</h3>    
+          <Table />
+      </Suspense> 
+  );
+}
+
+const Table = () => {
+  const gridRef = useRef();
   const [gridApi, setGridApi] = useState(null);
   const [gridColumnApi, setGridColumnApi] = useState(null);
   const [rowData, setRowData] = useState(null);
-  const [listPosts, setListPosts] = useState([]);
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [editedRows, setEditedRows] = useState([]);
-  const [btndisabled, setBtnDisabled] = useState(true);
+  const [addRows, setAddRows] = useState([]);
+  const [updateRows, setUpdateRows] = useState([]);
+  const [delRows, setDelRows] = useState([]);
+  const [isEditted, setIsEditted] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
-
-  const notify = (msg) => toast.error(msg);
-
-  const CheckRegExp ={
-    name : function (p){
-      const regExp=/^[가-힣a-zA-Z]+$/
-      if(p.newValue===""){
-        notify("담당자명을 입력해주세요.");
-        return p.oldValue;
-      }else if(!regExp.test(p.newValue)){
-        notify("한글 또는 영어만 입력 가능합니다.");
-        return p.oldValue;
-      }else if(p.newValue.length < 3 || p.newValue.length > 20){
-        notify("3글자 이상, 20글자 이하로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-    email : function (p){
-      const regExp=/^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i
-      if(p.newValue===""){
-        notify("이메일을 입력해주세요.");
-        return p.oldValue;
-      }else if(!regExp.test(p.newValue)){
-        notify("이메일 형식(user@domain.kr)으로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-
-    phone_number : function (p){
-      const regExp=/\+821\d{8,9}/
-      if(p.newValue===""){
-        notify("휴대폰 번호를 입력해주세요.");
-        return p.oldValue;
-      }else if(!regExp.test(p.newValue)){
-        notify("휴대폰번호 형식(+821012345678)으로 입력해주세요.");
-        return p.oldValue;
-      }else if(p.newValue.length < 12 || p.newValue.length > 13){
-        notify("12글자 이상, 13글자 이하로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-
-    brand : function (p){
-      if(p.newValue===""){
-        notify("브랜드명을 입력해주세요.");
-        return p.oldValue;
-      }else if(p.newValue.length < 1 || p.newValue.length > 35){
-        notify("1글자 이상, 35글자 이하로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-
-    company : function (p){
-      if(p.newValue===""){
-        notify("회사명을 입력해주세요.");
-        return p.oldValue;
-      }else if(p.newValue.length < 1 || p.newValue.length > 35){
-        notify("1글자 이상, 35글자 이하로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-    ceoName : function (p){
-      if(p.newValue===""){
-        notify("대표자명을 입력해주세요.");
-        return p.oldValue;
-      }else if(p.newValue.length < 3 || p.newValue.length > 30){
-        notify("3글자 이상, 30글자 이하로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-
-    ceoPhone : function (p){
-      const regExp=/(\d){9,11}/
-      if(p.newValue===""){
-        notify("휴대폰 번호를 입력해주세요.");
-        return p.oldValue;
-      }else if(!regExp.test(p.newValue)){
-        notify("휴대폰번호 형식(01012345678)으로 입력해주세요.");
-        return p.oldValue;
-      }else if(p.newValue.length < 9 || p.newValue.length > 11){
-        notify("9글자 이상, 11글자 이하로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-    bizNum : function (p){
-      const regExp=/\d{10}/
-      if(p.newValue===""){
-        notify("사업자 번호를 입력해주세요.");
-        return p.oldValue;
-      }else if(!regExp.test(p.newValue)){
-        notify("숫자형식(10글자)으로 입력해주세요.");
-        return p.oldValue;
-      }else if(p.newValue.length < 10 || p.newValue.length > 10){
-        notify("10글자로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-    bizAddr : function (p){
-      if(p.newValue===""){
-        notify("사업장주소를 입력해주세요.");
-        return p.oldValue;
-      }else if(p.newValue.length < 5 || p.newValue.length > 100){
-        notify("5글자 이상, 100글자 이하로 입력해주세요.");
-        return p.oldValue;
-      }
-      return p.newValue;
-    },
-
-
-
-  }
+  const data = gqlsuspense(API.graphql(graphqlOperation(listGroups)));
+  const x = data.data.listGroups.items;
+  const sourceLists = data.data.listGroups.items;
+  //console.log("sourceLists->",sourceLists);
+  const lists = sourceLists.map(({ name: label, ...rest }) => ({ label, ...rest }));
+  const pre=lists.filter((v,i,a)=>a.findIndex(t=>(t.type === v.type))===i)
+  const dropdownData=pre.map(a => a.type)
+  const autopcompleteData = lists.map((a) => { return {label:a.label}})
+  //console.log(dropdownData);
 
   const  LinkComponent=(props)=> {
     return (
@@ -161,46 +68,63 @@ const Users = () => {
   }
 
   const [columnDefs, setColumnDefs] = useState([
-    { field: 'name', 
-      headerName : '담당자명', 
-      filter:'agTextColumnFilter',
-      //headerCheckboxSelection: true,
-      //headerCheckboxSelectionFilteredOnly: true,
-      //checkboxSelection: true,
-      valueParser: CheckRegExp.name,
+    {checkboxSelection: true, headerCheckboxSelection: true, headerCheckboxSelectionFilteredOnly: true, floatingFilter: false, },
+    { field: 'id',headerName : '아이디', filter:'agTextColumnFilter', editable: false},
+    { field: 'name',  headerName : '담당자명', filter:'agTextColumnFilter', valueParser: lib.CheckRegExp.name},
+    { field: 'email', headerName : '이메일', minWidth: 180, filter:'agTextColumnFilter',valueParser: lib.CheckRegExp.email},
+    { field: 'phone_number', headerName : '휴대폰', minWidth: 150, filter:'agTextColumnFilter', valueFormatter: p => lib.Format.phone(p),valueParser: lib.CheckRegExp.phone_number},
+    {
+      field: "company", headerName: "회사명", filter:'agTextColumnFilter',   
+      cellEditor: AutocompleteSelectCellEditor,minWidth: 200, 
+      cellEditorParams: { required: true, selectData: autopcompleteData, placeholder: "그룹명을 입력해주세요."},
+      valueFormatter: params => { if (params.value) { return params.value.label; } return ""; },
+      valueParser: lib.CheckRegExp.company
     },
-    { field: 'email', headerName : '이메일', filter:'agTextColumnFilter',valueParser: CheckRegExp.email},
-    { field: 'phone_number', headerName : '휴대폰', minWidth: 200, filter:'agTextColumnFilter', valueFormatter: params => CommonGrid.formatPhone(params),valueParser: CheckRegExp.phone_number},
-    { field: 'company',headerName : '회사명', filter:'agTextColumnFilter',valueParser: CheckRegExp.company},
-    { field: 'brand',headerName : '브랜드', filter:'agTextColumnFilter',valueParser: CheckRegExp.brand},
-    { field: 'ceoName',headerName : '대표자명', filter:'agTextColumnFilter',valueParser: CheckRegExp.ceoName},
-    { field: 'ceoPhone',headerName : '대표자 휴대폰', filter:'agTextColumnFilter', valueFormatter: params => CommonGrid.formatCeoPhone(params),valueParser: CheckRegExp.ceoPhone},
-    { field: 'bizNum',headerName : '사업자등록번호',  minWidth: 180, filter:'agTextColumnFilter', valueFormatter: params => CommonGrid.formatBizNum(params),valueParser: CheckRegExp.bizNum},
-    { field: 'bizAddr',headerName : '사업자주소', minWidth: 200, filter:'agTextColumnFilter',valueParser: CheckRegExp.bizAddr},
-    { field: 'stateName',headerName : '분류', filter:'agTextColumnFilter'},
-    { field: 'bizLicName',
-      headerName : '사업자등록증',
-      filter:'agTextColumnFilter',
-      cellRenderer: LinkComponent,
-      editable: false,
+    { field: 'brand',headerName : '브랜드', filter:'agTextColumnFilter',valueParser: lib.CheckRegExp.brand},
+    { field: 'ceoName',headerName : '대표자명', filter:'agTextColumnFilter',valueParser: lib.CheckRegExp.ceoName},
+    { field: 'ceoPhone',headerName : '대표자 휴대폰', minWidth: 130, filter:'agTextColumnFilter', valueFormatter: p => lib.Format.ceoPhone(p),valueParser: lib.CheckRegExp.ceoPhone},
+    { field: 'bizNum',headerName : '사업자등록번호',  minWidth: 180, filter:'agTextColumnFilter', valueFormatter: p => lib.Format.bizNum(p),valueParser: lib.CheckRegExp.bizNum},
+    { field: 'bizAddr', headerName : "사업자주소", minWidth: 300, filter:'agTextColumnFilter',valueParser: lib.CheckRegExp.bizAddr,
+      cellEditor: 'agLargeTextCellEditor',
+      cellEditorPopup: true,
+      cellEditorParams: { maxLength: '300', cols: '50', rows: '6',},
     },
-
-    
-
+    { field: 'stateName', headerName: "그룹", editable: true, filter:'agTextColumnFilter', minWidth : 120,
+      cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true,
+      cellEditorParams: { cellHeight: 50, values: dropdownData }
+    },
+    { field: 'bizLicName', headerName : '사업자등록증', minWidth: 120, filter:'agTextColumnFilter', cellRenderer: LinkComponent, editable: false, },
+    { field: 'createAt', headerName : '가입일시', filter: "agDateColumnFilter", sort: 'desc', minWidth: 200, 
+      cellRenderer: (data) => {
+      return data.value ? (new Date(data.value)).toLocaleString() : ''; //toLocaleDateString
+      },
+      filterParams: {
+        comparator: function(filterLocalDateAtMidnight, cellValue) {
+          var dateAsString = cellValue;
+          if (dateAsString == null) return -1;
+          const y=dateAsString.substr(0,4) //2022
+          const m=dateAsString.substr(5,2) //03
+          const d=dateAsString.substr(8,2) //06
+          var cellDate = new Date(Number(y), Number(m)-1, Number(d));        
+          if (filterLocalDateAtMidnight.getTime() == cellDate.getTime()) { return 0; }
+          if (cellDate < filterLocalDateAtMidnight) { return -1; }
+          if (cellDate > filterLocalDateAtMidnight) { return 1; }
+        },
+        browserDatePicker: true
+      }
+    },
+  
   ]);
 
-
-
-  
-
+  let stateNameType = '미분류';
 
   const defaultColDef = useMemo(() => {
     return {
       flex: 1,
       filter: true,
+      editable: true,
       resizable: true,
       floatingFilter: true,
-      editable: true,
       sortable: true,
     };
   }, []);
@@ -212,79 +136,16 @@ const Users = () => {
     const updateData = (data) => params.api.setRowData(data);
     listAllUsers();
     updateData(rowData);
-  };
-  const [loading, setLoading]=useState(true);
-  const onSelectionChanged = () => {
-    const data = gridApi.getSelectedRows();
-
-    if (data.length > 0) {
-      setBtnDisabled(false);
-    } else {
-      setBtnDisabled(true);
-    }
-    setSelectedRows(gridApi.getSelectedRows());
+    const columnIds = [];
+    params.columnApi.getAllColumns().forEach(column => {
+      columnIds.push(column.colId);
+    });
+    params.columnApi.autoSizeColumns(columnIds);
   };
 
-  const onCellValueChanged = (e) => {
-
-    const colId = e.column.getId();
-    if(colId==='stateName'){
-    //  
-    }
-    console.log("cellChange e->",e);
-    console.log("changed", e.data);
-    console.log("allData", rowData);
-    
-    if(e.newValue != e.oldValue){
-      delete e.data.createdAt;
-      delete e.data.updatedAt;
-      setEditedRows(editedRows => [...editedRows, e.data])
-
-      if(editedRows.length!=0){
-        let temp1=editedRows.reverse();
-
-        let temp = temp1.filter((item1, idx1)=>{
-          return temp1.findIndex((item2, idx2)=>{
-              console.log(item1.id == item2.id);
-           
-              return item1.sub == item2.sub;
-          }) == idx1;
-      });
-
-      setEditedRows(temp)
-      console.log("changed rows", temp);  
-
-
-      }else{
-        delete e.data.createdAt;
-        delete e.data.updatedAt;
-        
-      console.log("changed rows", editedRows);  
-
-      }
-
-
-   
-    }
+  async function handleQuickFilter(event){
+    gridApi.setQuickFilter(event.target.value);
   };
-
-
-  async function onEditedRowsSave() {
-    try {
-     console.log(editedRows);
-      
-    } catch (err) {
-      console.log({ err })
-    }
-
-  }
-
-  const onAddRow = () => {
-    
-    gridApi.updateRowData({
-      add: [{ email: '', phone_number: '+8210', company: '', brand: '', ceoName:'', ceoPhone:'010', bizNum:'', bizAddr:'', stateName:'미분류', bizLicName:'' }]
-        , addIndex:0 });
-}
 
   let nextToken;
   async function listAllUsers(limit){
@@ -304,10 +165,13 @@ const Users = () => {
     }
     const { NextToken, ...rest } =  await API.get(apiName, path, myInit);
     nextToken = NextToken;
-    console.log(rest.Users);
+    //console.log("User---->",rest.Users);
+    
+    
     const users = rest.Users.map((ele) => {
       const { Attributes } = ele;
-      return Attributes.reduce((agg, {Name, Value}) => {
+      let u=Attributes.reduce((agg, {Name, Value}) => {
+        //console.log("ele--->",ele)
         if (Name === 'name') { agg.name = Value; }
         if (Name === 'email') { agg.email = Value; }
         if (Name === 'phone_number') { agg.phone_number = Value; }
@@ -319,139 +183,257 @@ const Users = () => {
         if (Name === 'custom:ceoPhone') { agg.ceoPhone = Value; }
         if (Name === 'custom:stateName') { agg.stateName = Value; }
         if (Name === 'custom:bizLicName') { agg.bizLicName = Value; }
-        if (Name === 'sub') { agg.sub = Value; }
-
-                
+        if (Name === 'sub') { agg.sub = Value; }                
         return agg;        
-      }, {});      
+      }, {});
+      
+      u.createAt=ele.UserCreateDate;
+      u.id=ele.Username;
+
+      return u;      
     });
-    console.log("users->",users);
+    //console.log("users->",users);
     setRowData(users);
-    setListPosts(users);
-    setLoading(false);
+
     return rest;
   }
 
-  const CommonGrid = {
-    defaultBlank : " - ",
-    formatCurrency : function (param){
-      if(!param.value && param.value != "0") {
-          return CommonGrid.defaultBlank;
-      }    
-      return parseInt(param.value).format();
-    },
-    formatBizNum : function (param){
-      if(!param.value && param.value != "0") {
-          return CommonGrid.defaultBlank;
-      }    
-      return param.value.substr(0, 3) + "-" + param.value.substr(3, 2) + "-" + param.value.substr(5);
-    },
-    formatCeoPhone : function (param){
-      let num=param.value;
-      let result="";
-      if(num.substr(0, 2) === '02') {
-        if(num.substr(2).length==7){ result=num.substr(0,2)+"-"+num.substr(2,3)+"-"+num.substr(5); }
-        else{result=num.substr(0,2)+"-"+num.substr(2,4)+"-"+num.substr(6); }
-        return result
-      }else{
-        if(num.substr(3).length==7){ result=num.substr(0,3)+"-"+num.substr(3,3)+"-"+num.substr(6); }
-        else{result=num.substr(0,3)+"-"+num.substr(3,4)+"-"+num.substr(7); }
-        return result
-      }
-    },
-    formatPhone : function (param){
-      let num=param.value;
-      let result="";
-        if(num.substr(5).length==7){ result=num.substr(0,3)+"-"+num.substr(3,2)+"-"+num.substr(5,3)+"-"+num.substr(8); }
-        else{result=num.substr(0,3)+"-"+num.substr(3,2)+"-"+num.substr(5,4)+"-"+num.substr(9); }
-        return result
-    }
+
+  async function handleQuickFilter(e){
+    gridApi.setQuickFilter(e.target.value);
+  };
+
+  async function onBtAddRow(){
+    setIsOpen(!isOpen);
   }
 
-  async function handleQuickFilter(event){
-    gridApi.setQuickFilter(event.target.value);
+  async function onBtSave() {
+    const tempUpdateRow=[];
+    gridRef.current.api.stopEditing();
+    gridRef.current.api.forEachNodeAfterFilterAndSort( function(rowNode, index) {
+        if(rowNode.data.edit){
+          tempUpdateRow.push(rowNode.data);
+        }
+    });
+    console.log("updateRows-->",tempUpdateRow);
+    setUpdateRows(updateRows => [...updateRows, tempUpdateRow]);
+
+    if(tempUpdateRow.length!=0){
+      for (const [index, value] of tempUpdateRow.entries()) {
+        try {
+
+          const attributes=[
+            { Name: 'phone_number', Value: value.phone_number },
+            { Name: 'name', Value: value.name },
+            { Name: 'email', Value: value.email },
+            { Name: 'email_verified', Value: 'true' },
+            { Name: 'custom:company', Value: value.company },
+            { Name: 'custom:brand', Value: value.brand },
+            { Name: 'custom:bizNum', Value: value.bizNum },
+            { Name: 'custom:bizAddr', Value: value.bizAddr },
+            { Name: 'custom:bizLicName', Value: value.bizLicName },
+            { Name: 'custom:stateName', Value: value.stateName },
+            { Name: 'custom:ceoName', Value: value.ceoName },
+            { Name: 'custom:ceoPhone', Value: value.ceoPhone },
+          ]
+          //console.log(value);
+           //'custom:groupName' : groupName,
+          await updateUser(value.id, attributes)
+          .then((d) => { console.log(d); })
+          .catch(() => { console.log("update Row fail"); });
+
+
+        } catch (error) { console.log(error); }
+      };
+    }
+
+    if(delRows.length!=0){
+      for (const [index, value] of delRows.entries()) {
+        try {
+        //console.log(value.sub);
+         await deleteUser(value.id)
+          .then((d) => { console.log(d); })
+          .catch(() => { console.log("delete Row fail"); });
+          //await API.graphql({ query: deleteGroups, variables: { input: { id: value.id } }})
+          
+        } catch (error) { console.log(error); }
+      };
+    }
+    //window.location.replace("/users");
+  }
+
+  async function onBtDelete() {
+    const selectedRows = gridRef.current.api.getSelectedRows();
+    console.log("selectedRows->",selectedRows);
+    if(selectedRows.length==0){
+      alert("삭제할 건을 선택해주세요.");
+    }else{
+      selectedRows.forEach( function(selectedRow, index) {
+        setDelRows(delRows => [...delRows, selectedRow]);
+        gridApi.applyTransaction({remove: [selectedRow]});
+      });
+      setIsEditted(false);
+    }
+    //console.log("delRows->>",delRows);
+}
+
+const createUser = async (username, userAttributes) => {
+  const apiName = 'AdminQueries';
+  const path = '/createUser';
+  const params = {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `${(await Auth.currentSession())
+        .getAccessToken()
+        .getJwtToken()}`,
+    },
+    body: {
+      username,
+      userAttributes,
+    },
   };
+  return await API.post(apiName, path, params);
+};
+
+const updateUser = async (username, userAttributes) => {
+  const apiName = 'AdminQueries';
+  const path = '/updateUser';
+  const params = {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `${(await Auth.currentSession())
+        .getAccessToken()
+        .getJwtToken()}`,
+    },
+    body: {
+      username,
+      userAttributes,
+    },
+  };
+  return await API.post(apiName, path, params);
+};
+
+const deleteUser = async (username) => {
+  const apiName = 'AdminQueries';
+  const path = '/deleteUser';
+  const params = {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `${(await Auth.currentSession())
+        .getAccessToken()
+        .getJwtToken()}`,
+    },
+    body: { username },
+  };
+  return await API.post(apiName, path, params);
+};
+
+
+  async function onCellEditingStopped(e){
+    gridRef.current.api.stopEditing();
+    const data=e.data;
+      setIsEditted(false);
+      data.edit = true;
+      if(updateRows.some(v => v.id === data.id)){
+        setUpdateRows(updateRows.filter(updateRows => updateRows.id !== data.id));
+      }
+      setUpdateRows(updateRows => [...updateRows, data]);
+    
+    //console.log("updateRows->",updateRows);
+    //console.log("currentRows->",data);
+    //console.log("currentRows label->",data.label.label); 
+    
+  }  
+
+  const externalFilterChanged = useCallback((newValue) => {
+    stateNameType = newValue;
+    gridRef.current.api.onFilterChanged();
+  }, []);
+
+  const isExternalFilterPresent = useCallback(() => { return stateNameType !== 'all'; }, []);
+
+  const doesExternalFilterPass = useCallback(
+    (node) => {
+      switch (stateNameType) {
+        case 'none':
+          return node.data.stateName == "미분류";
+          case 'mem':
+            return node.data.stateName != "미분류";
+        default:
+          return true;
+      }
+    },
+    [stateNameType]
+  );
 
   return (
 
       <div className="ag-theme-alpine" style={{height: 400, width: "100%"}}>
         <Toaster/>
         <Row className="align-items-center mb-3">
-    <Col xs="auto">
-      <input
-          type="text"
-          placeholder="통합 검색"
-          onChange={handleQuickFilter}
-          className={`form-control`}
-        />
-    </Col>
-    <Col xs="auto">
-    {editedRows.length} 건 수정
-    </Col>
- 
-    <Col xs="auto">
-     
-    <Button
-          block
-          type="button"
-          onClick={onAddRow}
-        >
-          신규 등록
-        </Button>
-    </Col>
-
-  </Row>
+          <Col xs="auto">
+            <input
+                type="text"
+                placeholder="통합 검색"
+                onChange={handleQuickFilter}
+                className={`form-control`}
+              />
+          </Col>
+          <Col xs="auto">
+            <div className="filterHeader">
+            <input type="radio" name="filter" id="all" defaultChecked onChange={() => externalFilterChanged('all')} />
+            <span className="mr-4">전체</span> 
+            <input type="radio" name="filter" id="none" onChange={() => externalFilterChanged('none')} />
+            <span className="mr-4">임시회원</span>
+            <input type="radio" name="filter" id="mem" onChange={() => externalFilterChanged('mem')} />
+            <span >정회원</span>
+            </div>
+          </Col>
+          <Col xs="auto">
+          <ButtonGroup>
+            <Button type="button" onClick={onBtAddRow}>신규등록</Button>
+            <Button type="button" onClick={onBtDelete}>선택건 삭제</Button>
+            <Button type="button" onClick={onBtSave} disabled={isEditted}>서버저장</Button>
+          </ButtonGroup>
+          </Col>
+    
+        </Row>
         <AgGridReact
+            ref={gridRef}
             rowData={rowData}
-            rowSelection={"multiple"}
             columnDefs={columnDefs}
-            suppressRowClickSelection={false}
-            floatingFiltersHeight ={30}
-            defaultColDef={defaultColDef}
             onGridReady={onGridReady}
-            onSelectionChanged={onSelectionChanged}
-            onCellEditingStopped={(e) => {
-              onCellValueChanged(e);
-            }}
+            defaultColDef={defaultColDef}
+            rowSelection={'multiple'}
             localeText= {{noRowsToShow : '조회 결과가 없습니다.'}}
+            onCellEditingStopped={onCellEditingStopped}
             undoRedoCellEditing={true}
             undoRedoCellEditingLimit={20}
-            enableCellChangeFlash={true}
-            onRowDataUpdated={(e) => {
-              console.log("변경->",e);
-            }}
+            isExternalFilterPresent={isExternalFilterPresent}
+            doesExternalFilterPass={doesExternalFilterPass}
+
+
+            //suppressRowClickSelection={false}
+            //floatingFiltersHeight ={30}
+            //onSelectionChanged={onSelectionChanged}
+            //onCellEditingStopped={(e) => {onCellValueChanged(e);}}
+     
+            //enableCellChangeFlash={true}
+            //onRowDataUpdated={(e) => { console.log("변경->",e); }}
           >
      
           </AgGridReact>
-          
+          {isOpen && <Popup
+            content={<>
+              <b>Design your Popup</b>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+              <button>Test button</button>
+            </>}
+            handleClose={onBtAddRow}
+          />}
       </div>
   );
 }
 
+const Users = () => { return (<LoadTable />); }
 export default Users;
-
-/*
-
-  
-    <Col xs="auto">
-     
-    <Button
-          block
-          type="button"
-          onClick={onEditedRowsSave}
-        >
-          저장
-        </Button>
-    </Col>
-
-    <Col xs="auto">
-     
-    <Button
-          block
-          type="button"
-          onClick={onAddRow}
-        >
-          삭제
-        </Button>
-    </Col>
-*/
