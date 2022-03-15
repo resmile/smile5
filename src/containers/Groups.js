@@ -23,7 +23,7 @@ import * as lib from "../lib/aggridFun";
 import {AgGridReact} from 'ag-grid-react';
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
-import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
+//import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
 import 'ag-grid-enterprise';
 
 const options = [
@@ -223,9 +223,9 @@ let groupMemNameObj = {
     {checkboxSelection: true, headerCheckboxSelection: true, headerCheckboxSelectionFilteredOnly: true, floatingFilter: false, },
     {
       field: "label", headerName: "그룹명", editable: true, filter:'agTextColumnFilter',   
-      cellEditor: AutocompleteSelectCellEditor,
-      cellEditorParams: { required: true, selectData: autopcompleteData, placeholder: "그룹명을 입력해주세요."},
-      valueFormatter: params => { if (params.value) { return params.value.label; } return ""; },
+      //cellEditor: agTextColumnFilter,
+      //cellEditorParams: { required: true, selectData: autopcompleteData, placeholder: "그룹명을 입력해주세요."},
+      //valueFormatter: params => { if (params.value) { return params.value.label; } return ""; },
     },
     { field: 'type', headerName: "분류", editable: true, filter:'agTextColumnFilter', minWidth : 120,
       cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true,

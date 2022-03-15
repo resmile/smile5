@@ -14,7 +14,7 @@ import * as lib from "../lib/aggridFun";
 import {AgGridReact} from 'ag-grid-react';
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
-import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
+//import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
 import 'ag-grid-enterprise';
 import { createGroups, updateGroups, deleteGroups } from '../graphql/customMutations'
 
@@ -74,9 +74,9 @@ const Table = () => {
     { field: 'phone_number', headerName : '휴대폰', minWidth: 150, filter:'agTextColumnFilter', valueFormatter: p => lib.Format.phone(p),valueParser: lib.CheckRegExp.phone_number},
     {
       field: "company", headerName: "회사명", filter:'agTextColumnFilter',   
-      cellEditor: AutocompleteSelectCellEditor,minWidth: 200, 
-      cellEditorParams: { required: true, selectData: autopcompleteData, placeholder: "그룹명을 입력해주세요."},
-      valueFormatter: params => { if (params.value) { return params.value.label; } return ""; },
+      //cellEditor: agTextColumnFilter,minWidth: 200, 
+      //cellEditorParams: { required: true, selectData: autopcompleteData, placeholder: "그룹명을 입력해주세요."},
+      //valueFormatter: params => { if (params.value) { return params.value.label; } return ""; },
       valueParser: lib.CheckRegExp.company
     },
     { field: 'brand',headerName : '브랜드', filter:'agTextColumnFilter',valueParser: lib.CheckRegExp.brand},

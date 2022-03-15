@@ -12,7 +12,7 @@ import * as lib from "../lib/aggridFun";
 import {AgGridReact} from 'ag-grid-react';
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
-import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
+//import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
 import 'ag-grid-enterprise';
 
 import { fetchProfileData } from "../lib/fakeApi";
@@ -95,7 +95,7 @@ const Groups = () => {
     {
       headerName: "Already present data selector",
       field: "name",
-      cellEditor: AutocompleteSelectCellEditor,
+      cellEditor: agTextColumnFilter,
       cellEditorParams: {
         required: true,
         selectData: searchItems,
@@ -112,8 +112,8 @@ const Groups = () => {
     
     { field: 'name', headerName : '그룹명', editable: true, filter:'agTextColumnFilter'},
     { field: 'type', headerName: "분류", editable: true, filter:'agTextColumnFilter',
-      cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true,
-      cellEditorParams: { cellHeight: 50, values: selectData.map(a => a.type) }
+      cellEditor: 'agRichSelectCellEditor', //cellEditorPopup: true,
+      //cellEditorParams: { cellHeight: 50, values: selectData.map(a => a.type) }
     },
     { field: 'createdAt', headerName : '생성일', filter: "agDateColumnFilter",
       filterParams: {
