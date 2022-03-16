@@ -27,6 +27,9 @@ const {
   listGroupsForUser,
   listUsersInGroup,
   signUserOut,
+  createUser,
+  updateUser,
+  deleteUser,
 } = require('./cognitoActions');
 
 const app = express();
@@ -254,6 +257,63 @@ app.post('/signUserOut', async (req, res, next) => {
 
   try {
     const response = await signUserOut(req.body.username);
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/createUser', async (req, res, next) => {
+  if (!req.body.username) {
+    const err = new Error('username is required');
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  try {
+    const response = await createUser(
+      req.body.username,
+      req.body.userAttributes
+    );
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/updateUser', async (req, res, next) => {
+  if (!req.body.username) {
+    const err = new Error('username is required');
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  if (!req.body.userAttributes) {
+    const err = new Error('userAttributes is required');
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  try {
+    const response = await updateUser(
+      req.body.username,
+      req.body.userAttributes
+    );
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.post('/deleteUser', async (req, res, next) => {
+  if (!req.body.username) {
+    const err = new Error('username is required');
+    err.statusCode = 400;
+    return next(err);
+  }
+
+  try {
+    const response = await deleteUser(req.body.username);
     res.status(200).json(response);
   } catch (err) {
     next(err);

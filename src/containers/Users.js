@@ -16,7 +16,6 @@ import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
 //import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
 import 'ag-grid-enterprise';
-import { createGroups, updateGroups, deleteGroups } from '../graphql/customMutations'
 
 Number.prototype.format = function(n, x) {
   var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
@@ -93,7 +92,7 @@ const Table = () => {
       cellEditorParams: { cellHeight: 50, values: dropdownData }
     },
     { field: 'bizLicName', headerName : '사업자등록증', minWidth: 120, filter:'agTextColumnFilter', cellRenderer: LinkComponent, editable: false, },
-    { field: 'createAt', headerName : '가입일시', filter: "agDateColumnFilter", sort: 'desc', minWidth: 200, 
+    { field: 'createAt', headerName : '가입일시', filter: "agDateColumnFilter", sort: 'desc', minWidth: 200, editable: false,
       cellRenderer: (data) => {
       return data.value ? (new Date(data.value)).toLocaleString() : ''; //toLocaleDateString
       },
@@ -214,7 +213,7 @@ const Table = () => {
           tempUpdateRow.push(rowNode.data);
         }
     });
-    console.log("updateRows-->",tempUpdateRow);
+    //console.log("updateRows-->",tempUpdateRow);
     setUpdateRows(updateRows => [...updateRows, tempUpdateRow]);
 
     if(tempUpdateRow.length!=0){
@@ -241,7 +240,6 @@ const Table = () => {
           .then((d) => { console.log(d); })
           .catch(() => { console.log("update Row fail"); });
 
-
         } catch (error) { console.log(error); }
       };
     }
@@ -253,12 +251,11 @@ const Table = () => {
          await deleteUser(value.id)
           .then((d) => { console.log(d); })
           .catch(() => { console.log("delete Row fail"); });
-          //await API.graphql({ query: deleteGroups, variables: { input: { id: value.id } }})
-          
+                    
         } catch (error) { console.log(error); }
       };
     }
-    //window.location.replace("/users");
+    window.location.replace("/users");
   }
 
   async function onBtDelete() {
