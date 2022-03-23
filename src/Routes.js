@@ -61,9 +61,9 @@ export default function Routes() {
 <AuthenticatedRoute exact path="/dashboard">
   <DashBoard />
 </AuthenticatedRoute>
-<AuthenticatedRoute exact path="/unapproved">
+<UnauthenticatedRoute exact path="/unapproved">
   <Unapproved />
-</AuthenticatedRoute>
+</UnauthenticatedRoute>
 <AuthenticatedRoute exact path='/ords'>
 <Ords />
 </AuthenticatedRoute>

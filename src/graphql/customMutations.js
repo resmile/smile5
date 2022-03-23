@@ -8,6 +8,10 @@ mutation CreateGroups(
     id
     name
     type
+    tax
+    mem
+    memId
+    nickName
     createdAt
     updatedAt
   }
@@ -23,6 +27,10 @@ export const updateGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -58,6 +66,10 @@ export const deleteGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id

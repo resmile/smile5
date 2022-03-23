@@ -8,7 +8,13 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Tabs from "react-bootstrap/Tabs";
 import Tab from "react-bootstrap/Tab";
-import { MultiSelect } from "react-multi-select-component";
+import Multiselect from 'multiselect-react-dropdown';
+import Popup from '../components/Popup';
+import PopupCont from '../components/PopupCont';
+//import SelectDinerBtn1 from '../components/SelectDinerBtn1';
+import SelectDinerBtn from '../components/SelectDinerBtn';
+
+
 import Select from 'react-select'
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -26,21 +32,6 @@ import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
 //import {AutocompleteSelectCellEditor} from 'ag-grid-autocomplete-editor';
 import 'ag-grid-enterprise';
 
-const options = [
-  { label: "Grapes", value: "grapes1" },
-  { label: "Mango", value: "mango1" },
-  { label: "Strawberry", value: "strawberry1" },
-
-  { label: "Grapes", value: "grapes2" },
-  { label: "Mango", value: "mango2" },
-  { label: "Strawberry", value: "strawberry2" }, { label: "Grapes", value: "grapes" },
-  { label: "Mango", value: "mango" },
-  { label: "Strawberry", value: "strawberry3" }, { label: "Grapes", value: "grapes" },
-  { label: "Mango", value: "mango" },
-  { label: "Strawberry", value: "strawberry4" }, { label: "Grapes", value: "grapes" },
-  { label: "Mango", value: "mango" },
-  { label: "Strawberry", value: "strawberry5" },
-];
 function LoadTable() {
   return (
       <Suspense
@@ -74,9 +65,11 @@ function Table({
   const [addRowNo, setAddRowNo] = useState(0);
   const [updateRows, setUpdateRows] = useState([]);
   const [delRows, setDelRows] = useState([]);
+  const [curRow, setCurRow] = useState({});
   const [isEditted, setIsEditted] = useState(true);
   const notify = (msg) => toast.error(msg);
-
+  const [isOpen, setIsOpen] = useState(false);
+  
   const data = gqlsuspense(API.graphql(graphqlOperation(listGroups)));
 
   useEffect(() => {
@@ -105,6 +98,9 @@ function Table({
         id : x[i].id,
         name : x[i].name,
         type: x[i].type,
+        mem: x[i].mem,
+        tax: x[i].tax,
+        memId: x[i].memId,
         createdAt : x[i].createdAt,
         updatedAt : x[i].updatedAt,
         groupsGroupMemId : "",
@@ -119,6 +115,9 @@ function Table({
           id : x[i].id,
           name : x[i].name,
           type: x[i].type,
+          mem: x[i].mem,
+          tax: x[i].tax,
+          memId: x[i].memId,
           createdAt : x[i].createdAt,
           updatedAt : x[i].updatedAt,
           groupsGroupMemId : y[j].groupsGroupMemId,
@@ -153,17 +152,34 @@ function Table({
   const autopcompleteData = lists.map((a) => { return {label:a.label}})
   //console.log("autopcompleteData", autopcompleteData);
   
+  let filterBuyer = lists.filter(it => new RegExp('매출처', "i").test(it.type));
+  const multiSelect = filterBuyer.map((a) => { return a.label})
+  //const multiSelect = filterBuyer.map((a) => { return {desc:a.label, value:a.label}})
+  //console.log("filterBuyer", filterBuyer);
+  //console.log("multiSelect", multiSelect);
+  
 const groupMemEditor = memo(forwardRef((props, ref) => {
-    const isHappy = value => value === 'Happy';
+    console.log("props.value-->",props.value)
     const [selected, setSelected] = useState([]);
-    const [interimValue, setInterimValue] = useState(isHappy(props.value));
+    const [interimValue, setInterimValue] = useState(props.value);
     const [happy, setHappy] = useState(null);
     const refContainer = useRef(null);
+    console.log("refCon->",refContainer)
+    
+    let selectedVConvertObj="";
+    if(props.value!=null){
+      let preSelectedVConvertObj = props.value.split(',');
+      selectedVConvertObj = preSelectedVConvertObj.map((a) => { return {name:a, id:a}})  
+    }
+
+
+    //console.log("ref-->",ref);
+    console.log("props-->",props);
 
     useImperativeHandle(ref, () => {
-      console.log(ref);
-      console.log(selected);
-      let result = selected.map(a => a.value);
+      
+      //console.log(selected);
+      let result = selected.map(a => a.name);
       let b=result.join(", ");
       
         return {
@@ -177,25 +193,35 @@ const groupMemEditor = memo(forwardRef((props, ref) => {
         textAlign: 'center',
     };
 
+    const handleChange = (e) => { 
+      console.log(e);
+      //setSelected(e);
+      setSelected(pre => [...pre, e])
+     //let dropdownData1=e.map(d => d.name);
+     //let dd=dropdownData1.join(", ");
+     
+     //console.log("dd->", dd);
+     //props.setValue(dd);
+     //setSelected(pre => [...pre, e.target.value])
+    };
+
     return (
         <div ref={refContainer}
              style={mood}
              tabIndex={1} // important - without this the key presses wont be caught
         >
-        
-
-<Select
-        defaultValue={selected}
-        onChange={setSelected}
-        options={options}
-        isMulti={true}
-        autoFocus={true}
-        isSearchable={true}
-      />
-        </div>
+      <Multiselect
+options={multiSelect} // Options to display in the dropdown
+selectedValues={selectedVConvertObj} // Preselected value to persist in dropdown
+//onSelect={handleChange} // Function will trigger on select event
+onSelect={handleChange} // Function will trigger on select event
+//onRemove={this.onRemove} // Function will trigger on remove event
+displayValue="name" // Property name to display in the dropdown options
+/>
+</div>
     );
 }));
-
+/*
 let groupMemNameObj = {
   ...(mode=="delivery" && { field: 'groupMemName', headerName : groupMemNameKr, editable: true, filter:'agTextColumnFilter',
   cellEditor: groupMemEditor,
@@ -217,7 +243,68 @@ let groupMemNameObj = {
   cellEditorPopup: true,
   cellEditorParams: { maxLength: '300', cols: '50', rows: '6',},
 })
+}*/
+
+let memberObj = {
+  ...(mode=="buyer" && { field: 'mem', headerName : groupMemNameKr, minWidth: 120, floatingFilter: false, cellRenderer: SelectDinerBtn, editable: false, hide: true,}),
+  ...(mode=="seller" && { field: 'mem', headerName : groupMemNameKr, minWidth: 120, floatingFilter: false, cellRenderer: SelectDinerBtn, editable: false,hide: true, }),
+  ...(mode=="delivery" && { field: 'mem', headerName : groupMemNameKr, minWidth: 120, floatingFilter: false, cellRenderer: SelectDinerBtn, editable: false, cellRendererParams: {color: 'irishGreen', bt: isOpen,btn : onBtnSelectDiner} }),
+  ...(mode=="picking" && { field: 'mem', headerName : groupMemNameKr, minWidth: 120, floatingFilter: false, cellRenderer: SelectDinerBtn, editable: false, cellRendererParams: {color: 'aa', bt: isOpen,btn : onBtnSelectDiner}}),
 } 
+
+
+/*
+let memberObj = {
+  ...(mode=="delivery" && { field: 'mem', headerName : groupMemNameKr, editable: true, filter:'agTextColumnFilter',
+  cellEditor: groupMemEditor,
+  cellEditorPopup: true,
+  cellEditorParams: { maxLength: '300', cols: '50', rows: '6',},
+  }),
+  ...(mode=="picking" && { field: 'mem', headerName : groupMemNameKr, editable: true, filter:'agTextColumnFilter',
+  cellEditor: groupMemEditor,
+  cellEditorPopup: true,
+  cellEditorParams: { maxLength: '300', cols: '50', rows: '6',},
+  }),
+  ...(mode=="buyer" && { field: 'mem', headerName : groupMemNameKr, editable: true, filter:'agTextColumnFilter',
+  cellEditor: 'agLargeTextCellEditor',
+  cellEditorPopup: true,
+  cellEditorParams: { maxLength: '300', cols: '50', rows: '6',},
+}),
+  ...(mode=="seller" && { field: 'mem', headerName : groupMemNameKr, editable: true, filter:'agTextColumnFilter',
+  cellEditor: 'agLargeTextCellEditor',
+  cellEditorPopup: true,
+  cellEditorParams: { maxLength: '300', cols: '50', rows: '6',},
+})
+} */
+
+let taxObj = {
+  ...(mode=="buyer" && { field: 'tax', headerName: "과세구분", editable: true, filter:'agTextColumnFilter', minWidth : 50,
+  cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true,
+  cellEditorParams: { cellHeight: 50, values: ["과세","면세"] }
+  }),
+  ...(mode=="seller" && { field: 'tax', headerName: "과세구분", editable: true, filter:'agTextColumnFilter', minWidth : 50,
+  cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true,
+  cellEditorParams: { cellHeight: 50, values: ["과세","면세"] }
+  }),
+  ...(mode=="delivery" && { field: 'tax', headerName: "과세구분", editable: true, filter:'agTextColumnFilter', minWidth : 50,
+  cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true, hide: true,
+  cellEditorParams: { cellHeight: 50, values: ["과세","면세"] }
+  }),
+  ...(mode=="picking" && { field: 'tax', headerName: "과세구분", editable: true, filter:'agTextColumnFilter', minWidth : 50,
+  cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true, hide: true,
+  cellEditorParams: { cellHeight: 50, values: ["과세","면세"] }
+  })
+} 
+
+let nickName = {
+  ...(mode=="buyer" && { field: 'nickName', headerName: "닉네임", editable: true, filter:'agTextColumnFilter', minWidth : 50 }),
+  ...(mode=="seller" && { field: 'nickName', headerName: "닉네임", editable: true, filter:'agTextColumnFilter', minWidth : 50, hide: true, }),
+  ...(mode=="delivery" && { field: 'nickName', headerName: "닉네임", editable: true, filter:'agTextColumnFilter', minWidth : 50, hide: true, }),
+  ...(mode=="picking" && { field: 'nickName', headerName: "닉네임", editable: true, filter:'agTextColumnFilter', minWidth : 50, hide: true, }),
+} 
+
+
+
 
   const [columnDefs, setColumnDefs] = useState([
     {checkboxSelection: true, headerCheckboxSelection: true, headerCheckboxSelectionFilteredOnly: true, floatingFilter: false, },
@@ -227,12 +314,13 @@ let groupMemNameObj = {
       //cellEditorParams: { required: true, selectData: autopcompleteData, placeholder: "그룹명을 입력해주세요."},
       //valueFormatter: params => { if (params.value) { return params.value.label; } return ""; },
     },
+    nickName,
     { field: 'type', headerName: "분류", editable: true, filter:'agTextColumnFilter', minWidth : 120,
       cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true,
       cellEditorParams: { cellHeight: 50, values: dropdownData }
     },
-    groupMemNameObj
-    ,
+    memberObj,
+    taxObj,
     { field: 'createdAt', headerName : '생성일시', filter: "agDateColumnFilter", sort: 'desc',
       cellRenderer: (data) => {
       return data.value ? (new Date(data.value)).toLocaleString() : ''; //toLocaleDateString
@@ -282,7 +370,7 @@ let groupMemNameObj = {
   async function onBtAddRow(){
     setAddRowNo(addRowNo + 1);
     gridApi.applyTransaction({
-      add: [{createdAt: new Date(), groupMemId: null, groupMemName: "", groupsGroupMemId: null, id: addRowNo + 1, name: "", type: modeKr, updatedAt:new Date()}]
+      add: [{createdAt: new Date(), groupMemId: null, mem:"", tax:"",groupMemName: "", groupsGroupMemId: null, id: addRowNo + 1, name: "", type: modeKr, updatedAt:new Date()}]
         , addIndex:0 });
   }
 
@@ -300,7 +388,7 @@ let groupMemNameObj = {
     if(tempUpdateRow.length!=0){
       for (const [index, value] of tempUpdateRow.entries()) {
         try {
-          await API.graphql(graphqlOperation(updateGroups, { input: { id: value.id, name : value.name, type : value.type }}))
+          await API.graphql(graphqlOperation(updateGroups, { input: { id: value.id, name : value.label, type : value.type, mem:value.mem, tax:value.tax }}))
           .then((d) => { console.log(d); })
           .catch(() => { console.log("update Row fail"); });
         } catch (error) { console.log(error); }
@@ -310,7 +398,7 @@ let groupMemNameObj = {
     if(addRows.length!=0){
       for (const [index, value] of addRows.entries()) {
         try {
-          await API.graphql({ query: createGroups, variables: { input: { name : value.name, type : value.type } } })
+          await API.graphql({ query: createGroups, variables: { input: { name : value.name, type : value.type, mem:value.mem, tax:value.tax } } })
           .then((d) => { console.log(d); })
           .catch(() => { console.log("add Row fail"); });
         } catch (error) { console.log(error); }
@@ -373,7 +461,43 @@ let groupMemNameObj = {
     console.log("currentRows->",data);
     //console.log("currentRows label->",data.label.label); 
     
-  }  
+  } 
+  
+  async function onBtnSelectDiner(){
+    setIsOpen(!isOpen);
+    const selectedRows = gridRef.current.api.getSelectedRows();
+    //const a=gridRef.current.api.getRowNode("d1c0a08c-f4e5-41dc-8fac-e2ab1fbad418");
+    //const a=gridRef.current.api.getRowNode(selectedRows[0].id);
+    //a.setDataValue('mem', "adasds");
+    //console.log("a->",a);
+    console.log("selectedRows->",selectedRows);
+    console.log("selectedRows[0]->",selectedRows[0]);
+    //let rowNode = gridRef.current.api.getRowNode(selectedRows[0].id);
+    //console.log("rowNode->",rowNode);
+    //setDataOnFord();
+    if(selectedRows[0].mem !=null){
+      setCurRow(selectedRows[0].mem.split(','));
+      //setCurRow(selectedRows[0]);
+    }else{setCurRow([]); }
+    //if(isOpen){ window.location.replace("/grous");}
+  }
+
+  async function onBtExportExcel(){
+    gridRef.current.api.exportDataAsExcel();
+  }
+
+  const setDataOnFord = useCallback(() => {
+    var rowNode = gridRef.current.api.getRowNode("d1c0a08c-f4e5-41dc-8fac-e2ab1fbad418");
+    console.log(rowNode)
+  }, []);
+
+  const getSelectedRowData = () => {
+    let selectedNodes = gridApi.getSelectedNodes();
+    let selectedData = selectedNodes.map(node => node.data);
+    console.log(`Selected Nodes:\n${JSON.stringify(selectedData)}`);
+    console.log(selectedData[0].label);
+    return selectedData[0].label;
+  };
   
   const getRowData = useCallback(() => {
     const rowData = [];
@@ -427,6 +551,11 @@ const doesExternalFilterPass = useCallback(
   [modeType]
 );
 
+const getRowId = useCallback(function (params) {
+  console.log("getId->",params.data.id);
+  return params.data.id;
+}, []);
+
 
 /*
   const onCellKeyPress = useCallback((e) => {
@@ -455,6 +584,12 @@ const doesExternalFilterPass = useCallback(
             <Button type="button" onClick={onBtSave} disabled={isEditted}>서버저장</Button>
           </ButtonGroup>
           </Col>
+          <Col xs="auto">
+          <Button type="button" onClick={onBtExportExcel}>엑셀다운</Button>
+          </Col>
+          <Col xs="auto">
+          <Button type="button" onClick={getSelectedRowData}>현재 행</Button>
+          </Col>
       </Row>
         <AgGridReact
                 ref={gridRef}
@@ -470,8 +605,13 @@ const doesExternalFilterPass = useCallback(
                 onCellKeyPress={onCellKeyPress}
                 isExternalFilterPresent={isExternalFilterPresent}
                 doesExternalFilterPass={doesExternalFilterPass}
+                getRowId={getRowId}
                 >
            </AgGridReact>
+           {isOpen && <Popup
+            content={<PopupCont setCurRow={setCurRow} curRow={curRow} multiSelect={multiSelect} isOpen={isOpen} setIsOpen={setIsOpen}/>}
+            handleClose={onBtnSelectDiner}
+          />}
       </div>
   );
 }
@@ -490,4 +630,6 @@ export default Groups;
                 get Rows
               </Button>
           </Col>
+
+         
 */

@@ -6,15 +6,14 @@ import LoaderButton from "../components/LoaderButton";
 import { useAppContext } from "../lib/contextLib";
 import { onError } from "../lib/errorLib";
 import "./Signup.css";
-import { Auth, Storage } from "aws-amplify";
+import { API, Auth, Storage, graphqlOperation } from "aws-amplify";
 import { ListGroup } from "react-bootstrap";
 import * as Yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
 import { v4 as uuid } from 'uuid';
 
-
-export default function Signup() {
+export default function Signup({ adminMode }) {
   const schema = Yup
     .object()
     .shape({
@@ -110,9 +109,9 @@ export default function Signup() {
 
   useEffect(() => {
     if(mode=="signUp10" || mode=="signUp20" || mode=="signUp21"){
-      if(mode=="signUp10") { setGroupNo(10); setGroupName(""); }
-      else if(mode=="signUp20") { setGroupNo(20); setGroupName(""); }
-      else { setGroupNo(21); setGroupName(""); }
+      if(mode=="signUp10") { setGroupNo(10); setGroupName("매입처"); }
+      else if(mode=="signUp20") { setGroupNo(20); setGroupName("매출처"); }
+      else { setGroupNo(21); setGroupName("매출처"); }
       reset({
       id : '',
       pwd : '',
@@ -130,6 +129,7 @@ export default function Signup() {
     });
     }else if(mode=="signUp1"){
       setGroupNo(1);
+      setGroupName("배송");
       reset({
         id : '',
         pwd : '',
@@ -146,7 +146,7 @@ export default function Signup() {
         bizLic : 'temp.jpg'
       });
     }else if(mode=="signUp22"){
-    
+      setGroupName("매출처");
       setGroupNo(22);
         reset({
           id : '',
@@ -186,7 +186,7 @@ export default function Signup() {
     let u=getValues();
     let ph=u.phone.substr(1);
     const phone = "+82"+ph;
-    
+    const gName = (mode=="signUp1" ? u.groupName : groupName);
     try {
       const newUser = Auth.signUp({
         username: u.id,
@@ -203,13 +203,13 @@ export default function Signup() {
           'custom:bizLic' : uploadedFileUrl,
           'custom:groupName' : groupName,
           //'custom:groupNo' : groupNo,
-          'custom:stateName' : "미분류",
+          ...(adminMode=="admin" ? {'custom:stateName': gName }: {'custom:stateName': "미분류" }),
           //'custom:stateNo' : 0,
           'custom:ceoName' : u.ceoName,
           'custom:ceoPhone' : u.ceoPhone,
-          }
+          } 
       });
-      setMode("confirm");
+       setMode("confirm");
     } catch (e) {
       const msg=onError(e);      
       switch (msg) {
@@ -238,11 +238,22 @@ export default function Signup() {
   async function handleConfirmationSubmit(event) {
     event.preventDefault();
     setErrorMsg("");
+    
     let u=getValues();
+    /*
+    const gName = (mode=="signUp1" ? u.groupName : "미분류");
+    let groupName="";
+    if(gName==="매출처") { groupName="buyer"}
+    else if(gName==="매입처") { groupName="seller"}
+    else if(gName==="배송" || gName==="피킹" || gName==="일반") { groupName="general"}
+    else if(gName==="미분류") { groupName="none"}
+    else{ groupName="admin"}
+    */
     try {
       await Auth.confirmSignUp(u.id, code).then(() => {
-        setMode("completed");
-         
+        //addUserToGroup(u.id, groupName);
+        if(adminMode=="admin"){ setMode("completedAdmin");}
+        else{ setMode("completed"); } 
       })
     } catch (e) {
       const msg=onError(e);      
@@ -254,7 +265,9 @@ export default function Signup() {
           setErrorMsg("아이디 또는 비밀번호가 일치하지 않습니다.");
         break;
         default:
-          setMode("completed");
+          //addUserToGroup(u.id, groupName);
+          if(adminMode=="admin"){ setMode("completedAdmin");}
+          else{ setMode("completed"); }  
           //setErrorMsg("일시적으로 알 수 없는 오류가 발생하였습니다. 잠시 후 다시 시도해주세요.");
       }
     }
@@ -317,6 +330,24 @@ export default function Signup() {
       });
     });
   }
+
+  const addUserToGroup = async (username, groupname) => {
+    const apiName = 'AdminQueries';
+    const path = '/addUserToGroup';
+    const params = {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `${(await Auth.currentSession())
+          .getAccessToken()
+          .getJwtToken()}`,
+      },
+      body: {
+        username,
+        groupname,
+      },
+    };
+    return await API.post(apiName, path, params);
+  };
   
   const render = {
     userType : (
@@ -430,6 +461,18 @@ export default function Signup() {
           />
           <div className="invalid-feedback">{errors.company?.message}</div>
         </div>
+        {mode!="signUp20"&& (
+        <div className="form-group">
+          <label>브랜드</label>
+          <input
+            type="text"
+            placeholder="예: 연안식당"
+            {...register('brand')}
+            className={`form-control ${errors.brand ? 'is-invalid' : ''}`}
+          />
+          <div className="invalid-feedback">{errors.brand?.message}</div>
+        </div>
+        )}
         <div className="row">
         <div className="form-group col">
         <label>대표자명</label>
@@ -612,6 +655,18 @@ export default function Signup() {
           />
           <div className="invalid-feedback">{errors.company?.message}</div>
         </div>
+        {mode!="signUp10"&& (
+        <div className="form-group">
+          <label>브랜드</label>
+          <input
+            type="text"
+            placeholder="예: 연안식당"
+            {...register('brand')}
+            className={`form-control ${errors.brand ? 'is-invalid' : ''}`}
+          />
+          <div className="invalid-feedback">{errors.brand?.message}</div>
+        </div>
+        )}
         <div className="row">
         <div className="form-group col">
         <label>대표자명</label>
@@ -780,7 +835,18 @@ export default function Signup() {
             className={`form-control ${errors.email ? 'is-invalid' : ''}`}
           />
           <div className="invalid-feedback">{errors.email?.message}</div>
-        </div>       
+        </div>     
+
+        <div className="form-group">
+          <label>분류</label>
+          <select className="form-control" {...register('groupName')}>
+            <option disabled>그룹을 선택해주세요.</option>
+            <option>일반</option>
+            <option>배송</option>
+            <option>피킹</option>
+          </select>
+          <div className="invalid-feedback">{errors.email?.message}</div>
+        </div>      
 
         <div className="form-group form-check mt-3">
           <input
@@ -796,7 +862,6 @@ export default function Signup() {
           </label>
           <div className="invalid-feedback">{errors.acceptTerms?.message}</div>
         </div>
-
         <Button
           block
           size="lg"
@@ -838,6 +903,7 @@ export default function Signup() {
         <div className="form-group col">
         <label>비밀번호 확인</label>
         <input
+            name="confirmPwd"
             type="password"
             {...register('confirmPwd')}
             className={`form-control ${
@@ -1029,6 +1095,7 @@ export default function Signup() {
         <div className="form-group col">
         <label>비밀번호 확인</label>
         <input
+            name="confirmPwd"
             type="password"
             {...register('confirmPwd')}
             className={`form-control ${
@@ -1083,12 +1150,24 @@ export default function Signup() {
           <label>식당명</label>
           <input
             type="text"
-            placeholder="예: OO식당"
+            placeholder="예: 연안식당 하남미사역점"
             {...register('company')}
             className={`form-control ${errors.company ? 'is-invalid' : ''}`}
           />
           <div className="invalid-feedback">{errors.company?.message}</div>
         </div>
+        {mode!="signUp21"&& (
+        <div className="form-group">
+          <label>브랜드</label>
+          <input
+            type="text"
+            placeholder="예: 연안식당"
+            {...register('brand')}
+            className={`form-control ${errors.brand ? 'is-invalid' : ''}`}
+          />
+          <div className="invalid-feedback">{errors.brand?.message}</div>
+        </div>
+        )}
         <div className="row">
         <div className="form-group col">
         <label>대표자명</label>
@@ -1152,6 +1231,8 @@ export default function Signup() {
           <div className="invalid-feedback">{errors.bizLic?.message}</div>
           
         </div>
+        
+
         <div className="form-group form-check mt-3">
           <input
             name="acceptTerms"
@@ -1162,7 +1243,7 @@ export default function Signup() {
             }`}
           />
           <label htmlFor="acceptTerms" className="form-check-label">
-          <a href="/agreement" target="_blank">이용약관</a>, <a href="#" target="_blank">개인정보처리방침</a>에 모두 동의합니다.
+           <a href="/agreement" target="_blank">이용약관</a>, <a href="#" target="_blank">개인정보처리방침</a>에 모두 동의합니다.
           </label>
           <div className="invalid-feedback">{errors.acceptTerms?.message}</div>
         </div>
@@ -1217,6 +1298,17 @@ export default function Signup() {
 
 가입 후 영업일+2일 내에
 담당자 확인 후 승인처리됩니다.
+`}</p>
+        
+      </div>
+    ),
+    completedAdmin : (
+      <div className="lander">
+        <h3>회원가입완료</h3>
+        <p className="text-muted" style={{marginTop:50}}>{`[우측 상단의 [X]버튼을 눌러 창을 닫아주세요.
+
+가입된 회원은 미분류 회원으로분류됩니다.
+회원리스트에서 승인처리해주세요.
 `}</p>
         
       </div>

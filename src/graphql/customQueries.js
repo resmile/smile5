@@ -9,6 +9,10 @@ export const listGroups = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }

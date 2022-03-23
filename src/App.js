@@ -35,6 +35,7 @@ Amplify.configure({
 function App() {
   const [isAuthenticating, setIsAuthenticating] = useState(true);
   const [isAuthenticated, userHasAuthenticated] = useState(false);
+  const [pathName, setPathName] = useState("");
   const history = useHistory();
 
   async function handleLogout() {
@@ -47,6 +48,8 @@ function App() {
 
   useEffect(() => {
     onLoad();
+    console.log(window.location.pathname);
+    setPathName(window.location.pathname);
   }, []);
   
   async function onLoad() {
@@ -81,7 +84,7 @@ function App() {
           <Navbar.Toggle />
           <Navbar.Collapse className="justify-content-end">
             <Nav activeKey={window.location.pathname}>
-              {isAuthenticated ? (
+              {isAuthenticated && pathName!="/unapproved"? (
                 <>
                   <Nav.Link href="/dashboard">Home</Nav.Link>
                   <NavDropdown title="수발주관리" id="basic-nav-dropdown">

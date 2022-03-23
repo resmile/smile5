@@ -65,6 +65,10 @@ type Groups @model {
   id: ID!
   name: String
   type: String
+  tax: String
+  mem: String
+  memId: String
+  nickName : String
   cuss: [Cuss] @hasMany
   groupMem: [GroupMem] @hasMany
 }

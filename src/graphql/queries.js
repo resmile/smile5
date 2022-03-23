@@ -411,6 +411,10 @@ export const getGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -448,6 +452,10 @@ export const listGroups = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }
@@ -470,6 +478,10 @@ export const getGroupMem = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }
@@ -499,6 +511,10 @@ export const listGroupMems = /* GraphQL */ `
           id
           name
           type
+          tax
+          mem
+          memId
+          nickName
           createdAt
           updatedAt
         }

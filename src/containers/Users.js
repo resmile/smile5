@@ -5,9 +5,11 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Popup from '../components/Popup';
 import toast, { Toaster } from 'react-hot-toast';
+import SignUp from './Signup';
+import FileUpload from '../components/fileUpload';
 
 import gqlsuspense from 'graphql-suspense'
-import { Auth, API, graphqlOperation } from 'aws-amplify'
+import { Auth, API, Storage, graphqlOperation } from 'aws-amplify'
 import { listGroups } from '../graphql/customQueries'
 
 import * as lib from "../lib/aggridFun";
@@ -49,7 +51,9 @@ const Table = () => {
   //console.log("sourceLists->",sourceLists);
   const lists = sourceLists.map(({ name: label, ...rest }) => ({ label, ...rest }));
   const pre=lists.filter((v,i,a)=>a.findIndex(t=>(t.type === v.type))===i)
-  const dropdownData=pre.map(a => a.type)
+  let preDropdownData=pre.map(a => a.type);
+  let dropdownData=[... preDropdownData];
+  dropdownData.push("일반");
   const autopcompleteData = lists.map((a) => { return {label:a.label}})
   //console.log(dropdownData);
 
@@ -91,7 +95,7 @@ const Table = () => {
       cellEditor: 'agRichSelectCellEditor', cellEditorPopup: true,
       cellEditorParams: { cellHeight: 50, values: dropdownData }
     },
-    { field: 'bizLicName', headerName : '사업자등록증', minWidth: 120, filter:'agTextColumnFilter', cellRenderer: LinkComponent, editable: false, },
+    { field: 'bizLicName', headerName : '사업자등록증', minWidth: 120, floatingFilter: false, cellRenderer: FileUpload, editable: false, },
     { field: 'createAt', headerName : '가입일시', filter: "agDateColumnFilter", sort: 'desc', minWidth: 200, editable: false,
       cellRenderer: (data) => {
       return data.value ? (new Date(data.value)).toLocaleString() : ''; //toLocaleDateString
@@ -203,6 +207,7 @@ const Table = () => {
 
   async function onBtAddRow(){
     setIsOpen(!isOpen);
+    if(isOpen){ window.location.replace("/users");}
   }
 
   async function onBtSave() {
@@ -218,18 +223,20 @@ const Table = () => {
 
     if(tempUpdateRow.length!=0){
       for (const [index, value] of tempUpdateRow.entries()) {
+        console.log("value->",value);
+        let bizLicName = { ...(!!value.bizLicName && { Name: 'custom:bizLicName', Value: value.bizLicName })}
         try {
-
+          
+          //{ Name: 'email_verified', Value: true },
           const attributes=[
             { Name: 'phone_number', Value: value.phone_number },
             { Name: 'name', Value: value.name },
             { Name: 'email', Value: value.email },
-            { Name: 'email_verified', Value: 'true' },
             { Name: 'custom:company', Value: value.company },
             { Name: 'custom:brand', Value: value.brand },
             { Name: 'custom:bizNum', Value: value.bizNum },
             { Name: 'custom:bizAddr', Value: value.bizAddr },
-            { Name: 'custom:bizLicName', Value: value.bizLicName },
+            bizLicName,
             { Name: 'custom:stateName', Value: value.stateName },
             { Name: 'custom:ceoName', Value: value.ceoName },
             { Name: 'custom:ceoPhone', Value: value.ceoPhone },
@@ -237,7 +244,44 @@ const Table = () => {
           //console.log(value);
            //'custom:groupName' : groupName,
           await updateUser(value.id, attributes)
-          .then((d) => { console.log(d); })
+          .then((d) => { 
+            if(!!value.oldType && value.oldType != value.stateName) { 
+              //oldType값이 존재하고 old와 New값이 다르다면 실행
+              //실행 : oldType의 그룹은 제거하고, newType의 그룹은 신규 등록
+              //value : 매출처 매입처 배송 피킹 일반
+              //groupName : admin buyer general seller
+              const oldType=value.oldType;
+              const stateName=value.stateName;
+              let oldV="";
+              let newV="";
+              if(oldType==="매출처") { oldV="buyer"}
+              else if(oldType==="매입처") { oldV="seller"}
+              else if(oldType==="배송" || oldType==="피킹" || oldType==="일반") { oldV="general"}
+              else{ oldV="admin"}
+
+              if(stateName==="매출처") { newV="buyer"}
+              else if(stateName==="매입처") { newV="seller"}
+              else if(stateName==="배송" || stateName==="피킹" || stateName==="일반") { newV="general"}
+              else{ newV="admin"}
+
+              console.log("oldType->",value.oldType);
+              console.log("newType->",value.stateName);
+              addUserToGroup(value.id, newV);
+              if(oldV!="미분류") removeUserFromGroup(value.id, oldV);
+            }
+
+            if(!!value.oldBizLicName && value.oldBizLicName != value.bizLicName) { 
+              handleUploadFile(value.bizLicName, value.newBizLicFileName);
+              handleDelFile(value.oldBizLicName);
+            }
+
+            if(!!value.oldBizLicName==false && value.bizLicName) {
+              handleUploadFile(value.bizLicName, value.newBizLicFileName);
+            }
+
+            console.log(d); 
+          
+          })
           .catch(() => { console.log("update Row fail"); });
 
         } catch (error) { console.log(error); }
@@ -255,7 +299,7 @@ const Table = () => {
         } catch (error) { console.log(error); }
       };
     }
-    window.location.replace("/users");
+    //window.location.replace("/users");
   }
 
   async function onBtDelete() {
@@ -271,6 +315,10 @@ const Table = () => {
       setIsEditted(false);
     }
     //console.log("delRows->>",delRows);
+}
+
+async function onBtExportExcel(){
+  gridRef.current.api.exportDataAsExcel();
 }
 
 const createUser = async (username, userAttributes) => {
@@ -324,22 +372,83 @@ const deleteUser = async (username) => {
   return await API.post(apiName, path, params);
 };
 
+const removeUserFromGroup = async (username, groupname) => {
+  const apiName = 'AdminQueries';
+  const path = '/removeUserFromGroup';
+  const params = {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `${(await Auth.currentSession())
+        .getAccessToken()
+        .getJwtToken()}`,
+    },
+    body: {
+      username,
+      groupname,
+    },
+  };
+  return await API.post(apiName, path, params);
+};
+
+const addUserToGroup = async (username, groupname) => {
+  const apiName = 'AdminQueries';
+  const path = '/addUserToGroup';
+  const params = {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `${(await Auth.currentSession())
+        .getAccessToken()
+        .getJwtToken()}`,
+    },
+    body: {
+      username,
+      groupname,
+    },
+  };
+  return await API.post(apiName, path, params);
+};
+
 
   async function onCellEditingStopped(e){
     gridRef.current.api.stopEditing();
+    console.log("e->",e);
     const data=e.data;
       setIsEditted(false);
       data.edit = true;
+      if(e.column.colId=="stateName"){ data.oldType = e.oldValue; }
       if(updateRows.some(v => v.id === data.id)){
         setUpdateRows(updateRows.filter(updateRows => updateRows.id !== data.id));
       }
       setUpdateRows(updateRows => [...updateRows, data]);
-    
-    //console.log("updateRows->",updateRows);
-    //console.log("currentRows->",data);
+      //console.log("data->", data);
+      
+    console.log("updateRows->",updateRows);
+    console.log("currentRows->",data);
     //console.log("currentRows label->",data.label.label); 
     
-  }  
+  } 
+
+
+  async function handleUploadFile(fileName, newBizLicFileName) {
+    console.log("fileName->",fileName);
+    console.log("file->".newBizLicFileName);
+
+    await Storage.put(fileName, newBizLicFileName).then(() => {
+      handleGetFile();
+    });
+    
+  }
+  async function handleGetFile() {
+    let fileKey= await Storage.list('')
+    const signedUrl = await Storage.get(fileKey.key);   
+  }
+
+  async function handleDelFile(fileName) {
+    await Storage.remove(fileName);
+  }
+  
+  
+  
 
   const externalFilterChanged = useCallback((newValue) => {
     stateNameType = newValue;
@@ -361,7 +470,7 @@ const deleteUser = async (username) => {
     },
     [stateNameType]
   );
-
+  
   return (
 
       <div className="ag-theme-alpine" style={{height: 400, width: "100%"}}>
@@ -389,8 +498,11 @@ const deleteUser = async (username) => {
           <ButtonGroup>
             <Button type="button" onClick={onBtAddRow}>신규등록</Button>
             <Button type="button" onClick={onBtDelete}>선택건 삭제</Button>
-            <Button type="button" onClick={onBtSave} disabled={isEditted}>서버저장</Button>
+            <Button type="button" onClick={onBtSave} >서버저장</Button>
           </ButtonGroup>
+          </Col>
+          <Col xs="auto">
+          <Button type="button" onClick={onBtExportExcel}>엑셀다운</Button>
           </Col>
     
         </Row>
@@ -420,11 +532,7 @@ const deleteUser = async (username) => {
      
           </AgGridReact>
           {isOpen && <Popup
-            content={<>
-              <b>Design your Popup</b>
-              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-              <button>Test button</button>
-            </>}
+            content={<SignUp adminMode="admin" />}
             handleClose={onBtAddRow}
           />}
       </div>
@@ -433,3 +541,5 @@ const deleteUser = async (username) => {
 
 const Users = () => { return (<LoadTable />); }
 export default Users;
+
+//disabled={isEditted}

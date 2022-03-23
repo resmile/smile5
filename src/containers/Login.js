@@ -33,9 +33,24 @@ export default function Login() {
 
     try {
       await Auth.signIn(fields.id, fields.pwd)
-      .then((d) => { 
-        //console.log(d);
-        userHasAuthenticated(true);
+      .then((d) => {
+        history.push("/dashboard"); 
+        console.log("d->",d);
+        console.log("stateName->",d.attributes["custom:stateName"]);
+        
+        if(d.attributes["custom:stateName"]=="미분류"){
+          Auth.signOut();
+          userHasAuthenticated(false);
+          history.push("/unapproved");
+        }else if(d.attributes["phone_number_verified"]==false){
+          Auth.resendSignUp(fields.id);
+          setMode("confirm");
+        }else{
+          userHasAuthenticated(true);
+          history.push("/dashboard");
+        }
+        
+        
         /*
         const stateName=d.attributes['custom:stateName'];
         console.log(stateName);
@@ -45,10 +60,28 @@ export default function Login() {
           history.push("/dashboard");
         }
         */
-        history.push("/dashboard");
+        //UserNotConfirmedException: User is not confirmed.
 
-      })
-      .catch(() => { console.log("login fail"); });
+      }).catch((e) => { 
+        const msg=onError(e);   
+        switch (msg) {
+          case "UserNotFoundException: User does not exist.":
+            setErrorMsg("존재하지 않는 유저입니다.");
+            break;
+          case "NotAuthorizedException: Incorrect username or password.":
+            setErrorMsg("아이디 또는 비밀번호가 일치하지 않습니다.");
+          break;
+          case "UserNotConfirmedException: User is not confirmed.":
+            Auth.resendSignUp(fields.id);
+            setMode("confirm");
+          break;
+          case "UserLambdaValidationException: PreAuthentication failed with error callback is not a function.":
+            history.push("/dashboard");
+          break;
+          default:
+            setErrorMsg("일시적으로 알 수 없는 오류가 발생하였습니다. 잠시 후 다시 시도해주세요.");
+        }  
+       });
     } catch (e) {
       const msg=onError(e);      
       switch (msg) {

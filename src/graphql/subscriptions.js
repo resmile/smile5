@@ -637,6 +637,10 @@ export const onCreateGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -669,6 +673,10 @@ export const onUpdateGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -701,6 +709,10 @@ export const onDeleteGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -736,6 +748,10 @@ export const onCreateGroupMem = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }
@@ -760,6 +776,10 @@ export const onUpdateGroupMem = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }
@@ -784,6 +804,10 @@ export const onDeleteGroupMem = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }

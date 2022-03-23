@@ -685,8 +685,6 @@ export const deletePurchas = /* GraphQL */ `
     }
   }
 `;
-
-
 export const createGroups = /* GraphQL */ `
   mutation CreateGroups(
     $input: CreateGroupsInput!
@@ -696,6 +694,10 @@ export const createGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -731,6 +733,10 @@ export const updateGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -766,6 +772,10 @@ export const deleteGroups = /* GraphQL */ `
       id
       name
       type
+      tax
+      mem
+      memId
+      nickName
       cuss {
         items {
           id
@@ -804,6 +814,10 @@ export const createGroupMem = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }
@@ -831,6 +845,10 @@ export const updateGroupMem = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }
@@ -858,6 +876,10 @@ export const deleteGroupMem = /* GraphQL */ `
         id
         name
         type
+        tax
+        mem
+        memId
+        nickName
         cuss {
           nextToken
         }
